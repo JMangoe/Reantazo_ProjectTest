@@ -177,8 +177,28 @@ app.get('/post/:id', async(req, res) => {
     res.json(postDoc);
 })
 
+
 app.listen(4000);
 //G4l5yICMLaa3VNOL password
 
 //Additional Features:
-//message if naggana si github HAHAHAHA
+//delete function
+app.delete('/post/:id', async(req,res) => {
+    const { token } = req.cookies;
+    jwt.verify(token, secret, {}, async(err,info) => {
+        if (err) return res.status(401).json({error: 'Unauthorized'});
+
+        const post = await Post.findById(req.params.id);
+        if (!post) return res.status(404).json({error: 'Post not found'});
+
+        const isAuthor = post.author.toString() === info.id;
+        if (!isAuthor) return res.status(403).json({error: 'You are not the author.'});
+
+        if (post.cover && fs.existsSync(post.cover)) {
+            fs.unlinkSync(post.cover);
+        }
+
+        await Post.deleteOne({_id: req.params.id});
+        res.json({ message: 'Post deleted successfully.'});
+    });
+})

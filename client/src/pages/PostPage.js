@@ -1,9 +1,10 @@
 import { formatISO9075 } from "date-fns";
 import { useContext, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { UserContext } from "../UserContext";
 
 export default function Postpage() {
+    const navigate = useNavigate();
     const [postInfo, setPostInfo] = useState(null);
     const {userInfo} = useContext(UserContext);
     const {id} = useParams();
@@ -18,12 +19,31 @@ export default function Postpage() {
 
     if(!postInfo) return '';
 
+    //added delete function
+    async function deletePost(postId){
+        const confirmed = window.confirm("Are you sure you want to delete this post?");
+        if (!confirmed) return;
+
+        const response = await fetch(`http://localhost:4000/post/${postId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+
+        if (response.ok) {
+            alert("Post deleted!");
+            navigate('/');
+        } else {
+            const data = await response.json();
+            alert(`Error: ${data.error}`);
+        }
+    }
+
     return (
         <div className="post-page">
             <h1>{postInfo.title}</h1>
             <time>{formatISO9075(new Date(postInfo.createdAt))}</time>
             <div className="author">by @{postInfo.author.username}</div>
-            {userInfo.id === postInfo.author._id && (
+            {userInfo?.id === postInfo.author._id && (
                 <div className="edit-row">
                     <Link className="edit-btn" to={`/edit/${postInfo._id}`}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
@@ -31,6 +51,7 @@ export default function Postpage() {
                         </svg>
                         Edit this post
                     </Link>
+                    <button onClick={() => deletePost(postInfo._id)}>Delete Post</button>
                 </div>
             )}
             <div className="image">
